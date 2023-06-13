@@ -109,7 +109,7 @@ public class WordDivider {
         }
         Object[] wordsFinal = wordList.toArray();
 
-        println(Arrays.toString(wordsFinal));
+//        println(Arrays.toString(wordsFinal));
 
         return words;
     }

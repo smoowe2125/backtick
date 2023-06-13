@@ -68,7 +68,7 @@ public class Interpreter {
                             throw arroutofbounds;
                         }
                     }
-                    sysio.println("Variables: " + varList);
+//                    sysio.println("Variables: " + varList);
                 } else if(statements[i].equals(":")) {
                     if(statements[i + 1].equals("toInt")) {
                         if(statements[i + 2].equals("(")) {
@@ -83,7 +83,7 @@ public class Interpreter {
                                 } catch (ArrayIndexOutOfBoundsException exc) {
                                     q--;
                                 }
-                                sysio.println(syslib.toInt(toSave));
+                                syslib.toInt(toSave);
                             } else {
                                 throw argmustbetype("string or char");
                             }
@@ -230,6 +230,7 @@ public class Interpreter {
                             } else {
                                 if(varList.contains(statements[i + 3])) {
                                     int index = varList.indexOf(statements[i + 3]) + 1;
+                                    // Ty debilu to jest podstawa println nie usuwaj
                                     sysio.println(varList.get(index));
                                 }
                             }

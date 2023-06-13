@@ -11,7 +11,7 @@ public class Checker {
             statement += " ";
         }
         // The user can extend the possibilities by making their own libraries and including the check for their keywords and stuff here
-        System.out.println("Statement: " + statement);
+//        System.out.println("Statement: " + statement);
         return statement;
     }
     public Object[] scan(Object[] input) {

@@ -71,7 +71,7 @@ public class Main {
                             for (int q = 0; q < lineSplit.length; q++) {
                                 lnS[q] = lineSplit[q];
                             }
-                            System.out.println(Arrays.toString(lnS));
+//                            System.out.println(Arrays.toString(lnS));
                             Object[] output = divider.divide(lnS);
                             Object[] statementOut = checker.scan(output);
                             // Library stuff
@@ -87,10 +87,10 @@ public class Main {
                                 }
                                 e++;
                             }
-                            System.out.println("SysLib Init: " + syslib.initialized);
-                            System.out.println("SysIO Init: " + sysio.initialized);
+//                            System.out.println("SysLib Init: " + syslib.initialized);
+//                            System.out.println("SysIO Init: " + sysio.initialized);
 
-                            sysio.println(Arrays.toString(statementOut));
+//                            sysio.println(Arrays.toString(statementOut));
                             interpreter.interpret(statementOut, syslib, sysio);
                         }
                         fileScan.close();
