@@ -1,0 +1,3 @@
+java -javaagent:/usr/share/idea/lib/idea_rt.jar=33999:/usr/share/idea/bin -Dfile.encoding=UTF-8 -classpath /home/jaciu/IdeaProjects/backtick-lang/out/production/backtick-lang org.smoowe2125.backtick.Main
+
+RUN IN BACKTICK-LANG DIR, NOT BACKTICK

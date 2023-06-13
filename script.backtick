@@ -1,0 +1,4 @@
+import syslib;
+import sysio;
+
+:println('hello world');
