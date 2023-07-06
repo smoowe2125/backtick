@@ -1,2 +1,5 @@
 # backtick
 backtick-lang is a programming language made by smoowe2125 in Java. For now it can perform only the simplest tasks: printing, assigning input to variables, but it still doesnt really care about datatypes, which means you can assign text to integers and all that. It is still in development stage.
+
+# DISCONTINUED
+I have abandoned this project after a long time of thinking about it. I have better things to do than writing a programming language that won't do anything special. HOWEVER, I might come back in the future. In the far away future, when I learn how to properly write a programming language. By then I will probably throw all my current code in the trash and rewrite everything from scratch because this code is shitty. I am sorry to no one, no one, and no one, because no one cares about it.
