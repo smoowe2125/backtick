@@ -1,5 +1,7 @@
 #pragma once
 
+#include <backtick_utils.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -16,8 +18,11 @@ typedef enum
     TOKEN_FOR,
     TOKEN_WHILE,
     TOKEN_FOREACH,
-    TOKEN_SYSCALL,
     TOKEN_IMPORT,
+    TOKEN_RETURN,
+    TOKEN_THROW,
+    TOKEN_CATCH,
+    TOKEN_FINALLY,
 
     // Types
     TOKEN_INT8,
@@ -72,9 +77,13 @@ typedef enum
 
     TOKEN_GREATER,
     TOKEN_GREATER_EQUAL,
+    TOKEN_RIGHT_SHIFT,
+    TOKEN_RIGHT_SHIFT_EQUAL,
     
     TOKEN_LESS,
     TOKEN_LESS_EQUAL,
+    TOKEN_LEFT_SHIFT,
+    TOKEN_LEFT_SHIFT_EQUAL,
     
     TOKEN_NOT,
     TOKEN_NOT_EQUAL,
@@ -146,6 +155,7 @@ Token *string(char *code, int *i)
 
     while(code[*i] != '\"')
     {
+        if(code[*i] == '\0') SCANNING_ERROR("Unterminated string.\n");
         cc[0] = code[*i];
 
         out->lexeme = realloc(out->lexeme, strlen(out->lexeme) + strlen(cc) + 1);
@@ -318,17 +328,48 @@ Token *identifier(char *code, int *i)
     {
     	out->type = TOKEN_WHILE;
     }
-    else if(compare(out->lexeme, "syscall"))
-    {
-    	out->type = TOKEN_SYSCALL;
-    }
     else if(compare(out->lexeme, "import"))
     {
     	out->type = TOKEN_IMPORT;
     }
+    else if(compare(out->lexeme, "return"))
+    {
+        out->type = TOKEN_RETURN;
+    }
+    else if(compare(out->lexeme, "throw"))
+    {
+        out->type = TOKEN_THROW;
+    }
+    else if(compare(out->lexeme, "catch"))
+    {
+        out->type = TOKEN_CATCH;
+    }
+    else if(compare(out->lexeme, "finally"))
+    {
+        out->type = TOKEN_FINALLY;
+    }
 
     return out;
 }
+
+/* I'd like to make some things clear here and give some explanations.
+    First of all:
+    Notice that in the functions below for scanning operators i is always incremented
+    by strlen(out->lexeme) - 1. If you think about it, the for loop is going to increment i by 1
+    after that. This is why.
+
+    Second of all:
+    The code is not commented. I know, but I do not know what to write in the comments.
+    For example, the only idea for a comment of the plus function below is
+    'An inline function for scanning the plus operators'
+    But you can tell that by just looking at the name.
+    I just don't know how to comment.
+
+    Finally:
+    Please don't lash out on me for my messy code.
+    I will try my best to make it readable but as I mentioned before,
+    I don't know how to comment.
+*/
 
 // I have decided that I'm a never nester so check this shit out
 
@@ -336,25 +377,25 @@ static inline Token *plus(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
 
-    if(code[*i + 1] == '=')
+    if(*i + 1 < strlen(code) && code[*i + 1] == '=')
     {
         out->type = TOKEN_PLUS_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "+=");
+        strcpy(out->lexeme, "+=");
         (*i)++;
         return out;
     }
-    else if(code[*i + 1] == '+')
+    else if(*i + 1 < strlen(code) && code[*i + 1] == '+')
     {
         out->type = TOKEN_PLUS_PLUS;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "++");
+        strcpy(out->lexeme, "++");
         (*i)++;
         return out;
     }
     out->type = TOKEN_PLUS;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "+");
+    strcpy(out->lexeme, "+");
     
     return out;
 }
@@ -363,25 +404,25 @@ static inline Token *minus(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
     
-    if(code[*i + 1] == '=')
+    if(*i + 1 < strlen(code) && code[*i + 1] == '=')
     {
         out->type = TOKEN_MINUS_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "-=");
+        strcpy(out->lexeme, "-=");
         (*i)++;
         return out;
     }
-    else if(code[*i + 1] == '-')
+    else if(*i + 1 < strlen(code) && code[*i + 1] == '-')
     {
         out->type = TOKEN_MINUS_MINUS;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "--");
+        strcpy(out->lexeme, "--");
         (*i)++;
         return out;
     }
     out->type = TOKEN_MINUS;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "-");
+    strcpy(out->lexeme, "-");
     
     return out;
 }
@@ -390,25 +431,25 @@ static inline Token *star(char *code, int *i)
 {
 	Token *out = malloc(sizeof(Token));
 
-    if(code[*i + 1] == '=')
+    if(*i + 1 < strlen(code) && code[*i + 1] == '=')
     {
         out->type = TOKEN_STAR_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "*=");
+        strcpy(out->lexeme, "*=");
         (*i)++;
         return out;
     }
-    else if(code[*i + 1] == '*')
+    else if(*i + 1 < strlen(code) && code[*i + 1] == '*')
     {
         out->type = TOKEN_STAR_STAR;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "**");
+        strcpy(out->lexeme, "**");
         (*i)++;
         return out;
     }
     out->type = TOKEN_STAR;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "*");
+    strcpy(out->lexeme, "*");
     
     return out;
 }
@@ -417,25 +458,25 @@ static inline Token *slash(char *code, int *i)
 {
 	Token *out = malloc(sizeof(Token));
     
-	if(code[*i + 1] == '=')
+	if(*i + 1 < strlen(code) && code[*i + 1] == '=')
 	{
 	    out->type = TOKEN_SLASH_EQUAL;
 	    out->lexeme = malloc(sizeof(char) * 3);
-	    strcat(out->lexeme, "/=");
+	    strcpy(out->lexeme, "/=");
 	    (*i)++;
 	    return out;
 	}
-	else if(code[*i + 1] == '/')
+	else if(*i + 1 < strlen(code) && code[*i + 1] == '/')
 	{
 	    out->type = TOKEN_SLASH_SLASH;
 	    out->lexeme = malloc(sizeof(char) * 3);
-	    strcat(out->lexeme, "//");
+	    strcpy(out->lexeme, "//");
 	    (*i)++;
 	    return out;
 	}
 	out->type = TOKEN_SLASH;
 	out->lexeme = malloc(sizeof(char) * 2);
-	strcat(out->lexeme, "/");
+	strcpy(out->lexeme, "/");
 
 	return out;
 }
@@ -444,17 +485,33 @@ static inline Token *greater(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
 
-    if(code[*i + 1] == '=')
+    if(*i + 1 < strlen(code) && code[*i + 1] == '=')
     {
         out->type = TOKEN_GREATER_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, ">=");
+        strcpy(out->lexeme, ">=");
+        (*i)++;
+        return out;
+    }
+    else if(*i + 1 < strlen(code) && code[*i + 1] == '>')
+    {
+        if(*i + 2 < strlen(code) && code[*i + 2] == '=')
+        {
+            out->type = TOKEN_RIGHT_SHIFT_EQUAL;
+            out->lexeme = malloc(sizeof(char) * 4);
+            strcpy(out->lexeme, ">>=");
+            (*i) += 2;
+            return out;
+        }
+        out->type = TOKEN_RIGHT_SHIFT;
+        out->lexeme = malloc(sizeof(char) * 3);
+        strcpy(out->lexeme, ">>");
         (*i)++;
         return out;
     }
     out->type = TOKEN_GREATER;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, ">");
+    strcpy(out->lexeme, ">");
     
     return out;
 }
@@ -463,22 +520,38 @@ static inline Token *less(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
     
-    if(code[*i + 1] == '=')
+    if(*i + 1 < strlen(code) && code[*i + 1] == '=')
     {
         out->type = TOKEN_LESS_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "<=");
+        strcpy(out->lexeme, "<=");
+        (*i)++;
+        return out;
+    }
+    else if(*i + 1 < strlen(code) && code[*i + 1] == '<')
+    {
+        if(*i + 2 < strlen(code) && code[*i + 2] == '=')
+        {
+            out->type = TOKEN_LEFT_SHIFT_EQUAL;
+            out->lexeme = malloc(sizeof(char) * 4);
+            strcpy(out->lexeme, "<<=");
+            (*i) += 2;
+            return out;
+        }
+        out->type = TOKEN_LEFT_SHIFT;
+        out->lexeme = malloc(sizeof(char) * 3);
+        strcpy(out->lexeme, "<<");
         (*i)++;
         return out;
     }
     out->type = TOKEN_LESS;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "<");
+    strcpy(out->lexeme, "<");
     
     return out;
 }
 
-static inline Token *not(char *code, int *i)
+static inline Token *not_(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
         
@@ -486,13 +559,13 @@ static inline Token *not(char *code, int *i)
     {
         out->type = TOKEN_NOT_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "!=");
+        strcpy(out->lexeme, "!=");
         (*i)++;
         return out;
     }
     out->type = TOKEN_NOT;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "!");
+    strcpy(out->lexeme, "!");
     
     return out;
 }
@@ -505,13 +578,13 @@ static inline Token *equal(char *code, int *i)
     {
         out->type = TOKEN_EQUAL_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "==");
+        strcpy(out->lexeme, "==");
         (*i)++;
         return out;
     }
     out->type = TOKEN_EQUAL;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "=");
+    strcpy(out->lexeme, "=");
     
     return out;
 }
@@ -524,18 +597,18 @@ static inline Token *modulo(char *code, int *i)
     {
         out->type = TOKEN_MODULO_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "%=");
+        strcpy(out->lexeme, "%=");
         (*i)++;
         return out;
     }
     out->type = TOKEN_MODULO;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "%");
+    strcpy(out->lexeme, "%");
     
     return out;
 }
 
-static inline Token *and(char *code, int *i)
+static inline Token *and_(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
         
@@ -543,7 +616,7 @@ static inline Token *and(char *code, int *i)
   	{
   	    out->type = TOKEN_AND_EQUAL;
   	    out->lexeme = malloc(sizeof(char) * 3);
-  	    strcat(out->lexeme, "&=");
+  	    strcpy(out->lexeme, "&=");
   	    (*i)++;
   	    return out;
   	}
@@ -551,18 +624,18 @@ static inline Token *and(char *code, int *i)
   	{
   	    out->type = TOKEN_LOGIC_AND;
   	    out->lexeme = malloc(sizeof(char) * 3);
-  	    strcat(out->lexeme, "&&");
+  	    strcpy(out->lexeme, "&&");
   	    (*i)++;
   	    return out;
   	}
   	out->type = TOKEN_AND;
   	out->lexeme = malloc(sizeof(char) * 2);
-  	strcat(out->lexeme, "&");
+  	strcpy(out->lexeme, "&");
   
   	return out;
 }
 
-static inline Token *xor(char *code, int *i)
+static inline Token *xor_(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
             
@@ -570,18 +643,18 @@ static inline Token *xor(char *code, int *i)
     {
         out->type = TOKEN_XOR_EQUAL;
         out->lexeme = malloc(sizeof(char) * 3);
-        strcat(out->lexeme, "^=");
+        strcpy(out->lexeme, "^=");
         (*i)++;
         return out;
     }
     out->type = TOKEN_XOR;
     out->lexeme = malloc(sizeof(char) * 2);
-    strcat(out->lexeme, "^");
+    strcpy(out->lexeme, "^");
     
     return out;
 }
 
-static inline Token *or(char *code, int *i)
+static inline Token *or_(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
         
@@ -589,7 +662,7 @@ static inline Token *or(char *code, int *i)
    	{
    	    out->type = TOKEN_OR_EQUAL;
    	    out->lexeme = malloc(sizeof(char) * 3);
-   	    strcat(out->lexeme, "|=");
+   	    strcpy(out->lexeme, "|=");
    	    (*i)++;
    	    return out;
    	}
@@ -597,18 +670,18 @@ static inline Token *or(char *code, int *i)
    	{
    	    out->type = TOKEN_LOGIC_OR;
    	    out->lexeme = malloc(sizeof(char) * 3);
-   	    strcat(out->lexeme, "||");
+   	    strcpy(out->lexeme, "||");
    	    (*i)++;
    	    return out;
    	}
    	out->type = TOKEN_OR;
    	out->lexeme = malloc(sizeof(char) * 2);
-   	strcat(out->lexeme, "|");
+   	strcpy(out->lexeme, "|");
    
    	return out;
 }
 
-Token *operator(char *code, int *i)
+Token *operator_(char *code, int *i)
 {
     switch(code[*i])
     {
@@ -638,7 +711,7 @@ Token *operator(char *code, int *i)
         }
         case '!':
         {
-            return not(code, i);
+            return not_(code, i);
         }
         case '=':
         {
@@ -650,15 +723,15 @@ Token *operator(char *code, int *i)
         }
         case '^':
         {
-            return xor(code, i);
+            return xor_(code, i);
         }
         case '&':
         {
-            return and(code, i);
+            return and_(code, i);
         }
         case '|':
         {
-            return or(code, i);
+            return or_(code, i);
         }
         default:
         {
@@ -710,6 +783,8 @@ void freelist(TokenList *list)
 // It took me many many tries to get this entire list system to work, mostly this function
 void push(TokenList *list, Token *element)
 {
+    if(!element) return;
+
     if(list->size == list->capacity)
     {
         list->capacity *= 2;
@@ -747,7 +822,7 @@ void analyze(char *code, int *i, TokenList *list)
         case '&':
         case '|':
         {
-            push(list, operator(code, i));
+            push(list, operator_(code, i));
             break;
         }
         case '(':
