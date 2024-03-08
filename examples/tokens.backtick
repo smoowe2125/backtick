@@ -1,4 +1,5 @@
 // This is a comment
 println print class if else for while foreach import return throw catch finally int8 int16 int32 int int64 uint8
-uint16 uint32 uint uint64 float double real string char object bool void 123 123.456 true false "Hello, user"
-+ += ++ - -= -- * *= ** / /= > >= >> >>= < <= << <<= ! != = == % %= ^ ^= & &= && | |= || () [] {} an_identifier
+uint16 uint32 uint uint64 float double real string char object bool void 123 123.456 true false "Hello, user" 'c'
++ += ++ - -= -- * *= ** / /= > >= >> >>= < <= << <<= ! != ~ ~= = == % %= ^ ^= & &= && | |= || () [] {}
+, . ? \ @ # $ : ; someIdentifier_1

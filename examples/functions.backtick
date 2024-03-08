@@ -1,0 +1,21 @@
+int add(int a, b)
+{
+    return a + b;
+}
+
+void print_func(string str)
+{
+    println str;
+}
+
+int[] get_arr(int a, b, c)
+{
+    int[3] result;
+    result = @{a, b, c};
+    return result;
+}
+
+println add(1, 2); // Shall print 3
+print_func("Hello, World!"); // Shall print "Hello, World!"
+println get_arr(1, 2, 3); // Shall print @{1, 2, 3}
+// This will work when the compiler will compile functions

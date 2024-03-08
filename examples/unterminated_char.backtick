@@ -1,0 +1,2 @@
+'this is the char considered too long' ' 'c
+//                                    ^ is considered a correct character literal

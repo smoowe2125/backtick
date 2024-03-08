@@ -57,6 +57,8 @@ typedef enum
 
     TOKEN_STR_LITERAL,
 
+    TOKEN_CHARACTER_LITERAL,
+
     // Operators
 
     TOKEN_PLUS,
@@ -88,6 +90,9 @@ typedef enum
     TOKEN_NOT,
     TOKEN_NOT_EQUAL,
 
+    TOKEN_BITWISE_NOT,
+    TOKEN_BITWISE_NOT_EQUAL,
+
     TOKEN_EQUAL,
     TOKEN_EQUAL_EQUAL,
 
@@ -116,12 +121,23 @@ typedef enum
     TOKEN_OPEN_BRACE,
     TOKEN_CLOSE_BRACE,
 
+    TOKEN_COMMA,
+    TOKEN_DOT,
+    TOKEN_QUESTION_MARK,
+    TOKEN_BACKSLASH,
+    TOKEN_AT,
+    TOKEN_HASHTAG,
+    TOKEN_DOLLAR,
+    TOKEN_COLON,
+
+    TOKEN_SEMICOLON,
+
     TOKEN_IDENTIFIER,
 
     TOKEN_EOF
 } TokenType;
 
-int current_line = 0;
+int current_line = 1;
 
 typedef struct
 {
@@ -158,7 +174,7 @@ Token *string(char *code, int *i)
 
     while(code[*i] != '\"')
     {
-        if(code[*i] == EOF) REPORT_ERROR(SCAN_ERROR, "Unterminated string.\n");
+        if(code[*i] == EOF) { REPORT_ERROR(SCAN_ERROR, "Unterminated string.\n"); break; }
         cc[0] = code[*i];
 
         out->lexeme = realloc(out->lexeme, strlen(out->lexeme) + strlen(cc) + 1);
@@ -167,8 +183,6 @@ Token *string(char *code, int *i)
 
         (*i)++;
     }
-
-    (*i)++;
 
     out->type = TOKEN_STR_LITERAL;
 
@@ -380,6 +394,8 @@ Token *identifier(char *code, int *i)
     {
         out->type = TOKEN_FINALLY;
     }
+
+    (*i)--;
 
     return out;
 }
@@ -724,6 +740,48 @@ static inline Token *or_(char *code, int *i)
    	return out;
 }
 
+static inline Token *bitwise_not(char *code, int *i)
+{
+    Token *out = malloc(sizeof(Token));
+
+    if(code[*i + 1] != EOF && code[*i + 1] == '=')
+    {
+        out->type = TOKEN_BITWISE_NOT_EQUAL;
+        out->lexeme = malloc(sizeof(char) * 3);
+        strcpy(out->lexeme, "~=");
+        (*i)++;
+        return out;
+    }
+    out->type = TOKEN_BITWISE_NOT;
+    out->lexeme = malloc(sizeof(char) * 2);
+    strcpy(out->lexeme, "~");
+
+    return out;
+}
+
+static inline Token *char_literal(char *code, int *i)
+{
+    Token *out = malloc(sizeof(Token));
+
+    if(code[(*i) + 1] == EOF || code[(*i) + 2] == EOF || code[(*i) + 2] != '\'')
+    {
+        REPORT_ERROR(SCAN_ERROR, "Unterminated character literal.\n");
+
+        free(out);
+        return NULL;
+    }
+    
+    out->lexeme = malloc(2 * sizeof(char));
+    out->type = TOKEN_CHARACTER_LITERAL;
+
+    out->lexeme[0] = code[(*i) + 1];
+    out->lexeme[1] = '\0';
+
+    (*i) += 2;
+
+    return out;
+}
+
 Token *operator_(char *code, int *i)
 {
     switch(code[*i])
@@ -772,6 +830,10 @@ Token *operator_(char *code, int *i)
         {
             return or_(code, i);
         }
+        case '~':
+        {
+            return bitwise_not(code, i);
+        }
         default:
         {
             return NULL;
@@ -783,7 +845,9 @@ Token *other(char *code, int *i)
 {
 	if(is_numeric(code[*i]))
 	{
-		return number(code, i);
+		Token *temp = number(code, i);
+        (*i)--;
+        return temp;
 	}
 	else if(is_alpha(code[*i]))
 	{
@@ -801,7 +865,6 @@ void comment(char *code, int *i)
     {
         (*i)++;
     }
-    current_line++;
 }
 
 typedef struct
@@ -886,6 +949,7 @@ void analyze(char *code, int *i, TokenList *list)
         case '^':
         case '&':
         case '|':
+        case '~':
         {
             push(list, operator_(code, i));
             break;
@@ -944,16 +1008,96 @@ void analyze(char *code, int *i, TokenList *list)
             push(list, token);
             break;
         }
+        case '.':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_DOT;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, ".");
+            push(list, token);
+            break;
+        }
+        case ',':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_COMMA;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, ",");
+            push(list, token);
+            break;
+        }
+        case '?':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_QUESTION_MARK;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, "?");
+            push(list, token);
+            break;
+        }
+        case '\\':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_BACKSLASH;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, "\\");
+            push(list, token);
+            break;
+        }
+        case '@':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_AT;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, "@");
+            push(list, token);
+            break;
+        }
+        case '#':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_HASHTAG;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, "#");
+            push(list, token);
+            break;
+        }
+        case '$':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_DOLLAR;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, "$");
+            push(list, token);
+            break;
+        }
+        case ':':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_COLON;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, ":");
+            push(list, token);
+            break;
+        }
+        case ';':
+        {
+            token = malloc(sizeof(Token));
+            token->type = TOKEN_SEMICOLON;
+            token->lexeme = malloc(2 * sizeof(char));
+            strcpy(token->lexeme, ";");
+            push(list, token);
+            break;
+        }
+        case '\'':
+        {
+            push(list, char_literal(code, i));
+            break;
+        }
         case '\"':
         {
         	push(list, string(code, i));
         	break;
-        }
-        case '\r':
-        case '\n':
-        {
-            current_line++;
-            break;
         }
         default:
         { 

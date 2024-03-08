@@ -1,3 +1,4 @@
+#include <backtick_utils.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,10 +6,12 @@
 #include <signal.h>
 
 #include <tokenizer.h>
+// Coming soon ;)
+// #include <parser.h>
 
 void print_token(Token *t)
 {
-	printf("[ Lexeme: %s ; Type: %d ; Line: %d ]\n", t->lexeme, t->type, t->line);
+	printf("[%d : %s : Line %d]\n", t->type, t->lexeme, t->line);
 }
 
 void free_token(Token *t)
@@ -60,19 +63,30 @@ void compile(char *filename)
         strcat(code, cc);
 	}
 
-	TokenList *list = tokenize(code);
+	TokenList *tokens = tokenize(code);
 
 	free(code);
 
+    if(had_error)
+    {
+        walk(tokens, free_token);
+        freelist(tokens);
+        fclose(script);
+        fprintf(stderr, "Errors detected. Compilation halted.\n");
+        exit(1);
+    }
+
 #ifdef DEBUG_PRINT_TOKEN_VALUES
 
-	walk(list, print_token);
+	walk(tokens, print_token);
 
 #endif
 
-	walk(list, free_token);
+    // Parsing time
 
-    freelist(list);
+	walk(tokens, free_token);
+
+    freelist(tokens);
 	
 	fclose(script);
 }
