@@ -1,9 +1,26 @@
 # backtick
 Backtick is a general purpose programming language that is currently in development.
-It focuses on being C-like while not requiring anyone to use pointers and dynamic memory allocation.
 
-Milestones:
-- Make a somewhat working tokenizer which supports comments and floating point numbers which doesn't leak memory [Done]
-- Make a parser which doesn't leak memory
-- Compile a "Hello, World!" program
-- Compile a bunch of example files (with the complete compiler supporting every operation) and run them
+The main objective of the project is to develop a stable, multi-paradigm
+language with C-like syntax and performance which does all the manual memory management for you.
+
+Roadmap:
+
+# Version 0.5
+- [ ] Number variables and functions
+- [ ] Arithmetic
+- [ ] print and println statements
+- [ ] if and else
+
+# Version 1
+- [ ] strings (variables, concatenation, etc.)
+- [ ] modules and import
+- [ ] switch statement
+- [ ] for, while, foreach
+- [ ] lists, arrays
+- [ ] throw, catch, finally
+- [ ] break, continue
+- [ ] character support (got delayed because of difficulty with escape codes)
+- [ ] objects, classes
+- [ ] assembly system calls as functions
+- [ ] standard library
