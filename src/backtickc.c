@@ -6,7 +6,7 @@
 #include <signal.h>
 
 #include <tokenizer.h>
-// Coming soon ;)
+// Coming not yet.
 // #include <parser.h>
 
 void print_token(Token *t)
@@ -20,7 +20,7 @@ void free_token(Token *t)
     free(t);
 }
 
-// #define FUNNY_PUN
+#define FUNNY_PUN
 
 // #define DEBUG_PRINT_CHAR_CODES
 #define DEBUG_PRINT_TOKEN_VALUES
@@ -69,8 +69,8 @@ void compile(char *filename)
 
     if(had_error)
     {
-        walk(tokens, free_token);
-        freelist(tokens);
+        walk_token_list(tokens, free_token);
+        free_token_list(tokens);
         fclose(script);
         fprintf(stderr, "Errors detected. Compilation halted.\n");
         exit(1);
@@ -78,15 +78,15 @@ void compile(char *filename)
 
 #ifdef DEBUG_PRINT_TOKEN_VALUES
 
-	walk(tokens, print_token);
+	walk_token_list(tokens, print_token);
 
 #endif
 
     // Parsing time
 
-	walk(tokens, free_token);
+	walk_token_list(tokens, free_token);
 
-    freelist(tokens);
+    free_token_list(tokens);
 	
 	fclose(script);
 }

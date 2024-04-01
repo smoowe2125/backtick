@@ -23,6 +23,11 @@ typedef enum
     TOKEN_THROW,
     TOKEN_CATCH,
     TOKEN_FINALLY,
+    TOKEN_SWITCH,
+    TOKEN_CASE,
+    TOKEN_DEFAULT,
+    TOKEN_BREAK,
+    TOKEN_CONTINUE,
 
     // Types
     TOKEN_INT8,
@@ -75,7 +80,6 @@ typedef enum
 
     TOKEN_SLASH,
     TOKEN_SLASH_EQUAL,
-    TOKEN_SLASH_SLASH,
 
     TOKEN_GREATER,
     TOKEN_GREATER_EQUAL,
@@ -161,7 +165,7 @@ bool is_alpha_numeric(char c)
     return is_alpha(c) || is_numeric(c) || c == '_';
 }
 
-Token *string(char *code, int *i)
+static inline Token *lex_string(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
     out->lexeme = malloc(sizeof(char));
@@ -174,7 +178,8 @@ Token *string(char *code, int *i)
 
     while(code[*i] != '\"')
     {
-        if(code[*i] == EOF) { REPORT_ERROR(SCAN_ERROR, "Unterminated string.\n"); break; }
+        if(code[*i] == EOF) { REPORT_ERROR(SCAN_ERROR, current_line, "Unterminated string.\n"); break; }
+        else if(code[*i] == '\n') continue;
         cc[0] = code[*i];
 
         out->lexeme = realloc(out->lexeme, strlen(out->lexeme) + strlen(cc) + 1);
@@ -189,7 +194,7 @@ Token *string(char *code, int *i)
     return out;
 }
 
-Token *number(char *code, int *i)
+static inline Token *lex_number(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
     out->lexeme = malloc(sizeof(char));
@@ -241,12 +246,7 @@ Token *number(char *code, int *i)
     return out;
 }
 
-bool compare(char *str1, char *str2)
-{
-    return strcmp(str1, str2) == 0;
-}
-
-Token *identifier(char *code, int *i)
+static inline Token *lex_identifier(char *code, int *i)
 {
     Token *out = malloc(sizeof(Token));
     out->lexeme = malloc(sizeof(char));
@@ -394,6 +394,26 @@ Token *identifier(char *code, int *i)
     {
         out->type = TOKEN_FINALLY;
     }
+    else if(compare(out->lexeme, "switch"))
+    {
+        out->type = TOKEN_SWITCH;
+    }
+    else if(compare(out->lexeme, "case"))
+    {
+        out->type = TOKEN_CASE;
+    }
+    else if(compare(out->lexeme, "default"))
+    {
+        out->type = TOKEN_DEFAULT;
+    }
+    else if(compare(out->lexeme, "break"))
+    {
+        out->type = TOKEN_BREAK;
+    }
+    else if(compare(out->lexeme, "continue"))
+    {
+        out->type = TOKEN_CONTINUE;
+    }
 
     (*i)--;
 
@@ -522,14 +542,6 @@ static inline Token *slash(char *code, int *i)
 	    out->type = TOKEN_SLASH_EQUAL;
 	    out->lexeme = malloc(sizeof(char) * 3);
 	    strcpy(out->lexeme, "/=");
-	    (*i)++;
-	    return out;
-	}
-	else if(code[*i + 1] != EOF && code[*i + 1] == '/')
-	{
-	    out->type = TOKEN_SLASH_SLASH;
-	    out->lexeme = malloc(sizeof(char) * 3);
-	    strcpy(out->lexeme, "//");
 	    (*i)++;
 	    return out;
 	}
@@ -759,30 +771,7 @@ static inline Token *bitwise_not(char *code, int *i)
     return out;
 }
 
-static inline Token *char_literal(char *code, int *i)
-{
-    Token *out = malloc(sizeof(Token));
-
-    if(code[(*i) + 1] == EOF || code[(*i) + 2] == EOF || code[(*i) + 2] != '\'')
-    {
-        REPORT_ERROR(SCAN_ERROR, "Unterminated character literal.\n");
-
-        free(out);
-        return NULL;
-    }
-    
-    out->lexeme = malloc(2 * sizeof(char));
-    out->type = TOKEN_CHARACTER_LITERAL;
-
-    out->lexeme[0] = code[(*i) + 1];
-    out->lexeme[1] = '\0';
-
-    (*i) += 2;
-
-    return out;
-}
-
-Token *operator_(char *code, int *i)
+static inline Token *operator_(char *code, int *i)
 {
     switch(code[*i])
     {
@@ -841,30 +830,22 @@ Token *operator_(char *code, int *i)
     }
 }
 
-Token *other(char *code, int *i)
+static inline Token *other(char *code, int *i)
 {
 	if(is_numeric(code[*i]))
 	{
-		Token *temp = number(code, i);
+		Token *temp = lex_number(code, i);
         (*i)--;
         return temp;
 	}
 	else if(is_alpha(code[*i]))
 	{
-		return identifier(code, i);
+		return lex_identifier(code, i);
 	}
 	else
 	{
-		return NULL;
+        return NULL;
 	}
-}
-
-void comment(char *code, int *i)
-{
-    while(code[*i] != EOF && code[*i] != '\n' && code[*i] != '\r')
-    {
-        (*i)++;
-    }
 }
 
 typedef struct
@@ -874,7 +855,7 @@ typedef struct
     size_t capacity;
 } TokenList;
 
-void initlist(TokenList **listptr)
+void init_token_list(TokenList **listptr)
 {
     TokenList *container = malloc(sizeof(TokenList));
 
@@ -885,14 +866,14 @@ void initlist(TokenList **listptr)
     *listptr = container;
 }
 
-void freelist(TokenList *list)
+void free_token_list(TokenList *list)
 {
     free(list->array);
     free(list);
 }
 
 // It took me many many tries to get this entire list system to work, mostly this function
-void push(TokenList *list, Token *element)
+void append_token(TokenList *list, Token *element)
 {
     if(!element) return;
 
@@ -906,9 +887,9 @@ void push(TokenList *list, Token *element)
     list->array[list->size++] = element;
 }
 
-typedef void (*WalkFn)(Token *);
+typedef void (*TokenWalkFn)(Token*);
 
-void walk(TokenList *list, WalkFn fn)
+void walk_token_list(TokenList *list, TokenWalkFn fn)
 {
     for(int i = 0; i < list->size; i++)
     {
@@ -916,27 +897,28 @@ void walk(TokenList *list, WalkFn fn)
     }
 }
 
-void comment_stuff(char *code, int *i, TokenList *list)
+static inline Token *comment_stuff(char *code, int *i, TokenList *list)
 {
-    Token *token = slash(code, i);
-    if(token->type == TOKEN_SLASH_SLASH)
+    if(code[(*i) + 1] == '/')
     {
-        comment(code, i);
-        free(token->lexeme);
-        free(token);
-        return;
+        while(code[*i] != '\n' && code[*i] != EOF)
+        {
+            (*i)++;
+        }
+        return NULL;
     }
-    push(list, token);
+
+    return slash(code, i);
 }
 
-void analyze(char *code, int *i, TokenList *list)
+static inline void analyze(char *code, int *i, TokenList *list)
 {
 	Token *token;
 
 	switch(code[*i])
     {
         case '/':
-            comment_stuff(code, i, list);
+            append_token(list, comment_stuff(code, i, list));
             break;
         case '+':
         case '-':
@@ -951,7 +933,7 @@ void analyze(char *code, int *i, TokenList *list)
         case '|':
         case '~':
         {
-            push(list, operator_(code, i));
+            append_token(list, operator_(code, i));
             break;
         }
         case '(':
@@ -960,7 +942,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_OPEN_PAREN;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "(");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case ')':
@@ -969,7 +951,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_CLOSE_PAREN;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, ")");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '[':
@@ -978,7 +960,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_OPEN_SQUARE;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "[");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case ']':
@@ -987,7 +969,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_CLOSE_SQUARE;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "]");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '{':
@@ -996,7 +978,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_OPEN_BRACE;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "{");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '}':
@@ -1005,7 +987,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_CLOSE_BRACE;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "}");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '.':
@@ -1014,7 +996,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_DOT;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, ".");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case ',':
@@ -1023,7 +1005,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_COMMA;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, ",");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '?':
@@ -1032,7 +1014,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_QUESTION_MARK;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "?");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '\\':
@@ -1041,7 +1023,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_BACKSLASH;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "\\");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '@':
@@ -1050,7 +1032,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_AT;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "@");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '#':
@@ -1059,7 +1041,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_HASHTAG;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "#");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '$':
@@ -1068,7 +1050,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_DOLLAR;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, "$");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case ':':
@@ -1077,7 +1059,7 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_COLON;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, ":");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case ';':
@@ -1086,22 +1068,22 @@ void analyze(char *code, int *i, TokenList *list)
             token->type = TOKEN_SEMICOLON;
             token->lexeme = malloc(2 * sizeof(char));
             strcpy(token->lexeme, ";");
-            push(list, token);
+            append_token(list, token);
             break;
         }
         case '\'':
         {
-            push(list, char_literal(code, i));
+            // append_token(list, char_literal(code, i));
             break;
         }
         case '\"':
         {
-        	push(list, string(code, i));
+        	append_token(list, lex_string(code, i));
         	break;
         }
         default:
         { 
-        	push(list, other(code, i));
+        	append_token(list, other(code, i));
         	break;
         }
     }
@@ -1110,7 +1092,7 @@ void analyze(char *code, int *i, TokenList *list)
 TokenList *tokenize(char *code)
 {
     TokenList *list;
-    initlist(&list);
+    init_token_list(&list);
 
     for(int i = 0; i < (int) strlen(code); i++)
     {
@@ -1127,7 +1109,7 @@ TokenList *tokenize(char *code)
     eof->type = TOKEN_EOF;
     strcpy(eof->lexeme, "EOF");
 
-    push(list, eof);
+    append_token(list, eof);
 
     return list;
 }

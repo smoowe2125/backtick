@@ -1,15 +1,21 @@
 #pragma once
 
-#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define SCAN_ERROR 1
 #define PARSE_ERROR 2
 
 int had_error = 0;
 
+bool compare(char *str1, char *str2)
+{
+    return strcmp(str1, str2) == 0;
+}
+
 // macro for reporting errors
-#define REPORT_ERROR(err_type, ...) {\
-    fprintf(stderr,  "[Line %d] ", current_line); \
+#define REPORT_ERROR(err_type, line, ...) {\
+    fprintf(stderr,  "[Line %d] ", line); \
     switch(err_type) \
     { \
         case SCAN_ERROR: \
