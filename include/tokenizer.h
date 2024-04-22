@@ -55,7 +55,8 @@ typedef enum
 
     // Expressions
 
-    TOKEN_NUMBER,
+    TOKEN_INTEGER,
+    TOKEN_FLOAT_LITERAL,
 
     TOKEN_TRUE,
     TOKEN_FALSE,
@@ -157,12 +158,12 @@ bool is_numeric(char c)
 
 bool is_alpha(char c)
 {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
 bool is_alpha_numeric(char c)
 {
-    return is_alpha(c) || is_numeric(c) || c == '_';
+    return is_alpha(c) || is_numeric(c);
 }
 
 static inline Token *lex_string(char *code, int *i)
@@ -216,7 +217,7 @@ static inline Token *lex_number(char *code, int *i)
 
     if(code[*i] != '.')
     {
-        out->type = TOKEN_NUMBER;
+        out->type = TOKEN_INTEGER;
         return out;
     }
 
@@ -241,7 +242,7 @@ static inline Token *lex_number(char *code, int *i)
         }
     }
 
-	out->type = TOKEN_NUMBER;
+	out->type = TOKEN_FLOAT_LITERAL;
 
     return out;
 }
@@ -270,35 +271,35 @@ static inline Token *lex_identifier(char *code, int *i)
 
     out->type = TOKEN_IDENTIFIER;
 
-    if(compare(out->lexeme, "int8"))
+    if(compare(out->lexeme, "int8") || compare(out->lexeme, "i8"))
     {
         out->type = TOKEN_INT8;
     }
-    else if(compare(out->lexeme, "int16"))
+    else if(compare(out->lexeme, "int16") || compare(out->lexeme, "i16"))
     {
         out->type = TOKEN_INT16;
     }
-    else if(compare(out->lexeme, "int32") || compare(out->lexeme, "int"))
+    else if(compare(out->lexeme, "int32") || compare(out->lexeme, "int") || compare(out->lexeme, "i32"))
     {
         out->type = TOKEN_INT32;
     }
-    else if(compare(out->lexeme, "int64"))
+    else if(compare(out->lexeme, "int64") || compare(out->lexeme, "i64"))
     {
         out->type = TOKEN_INT64;
     }
-    else if(compare(out->lexeme, "uint8"))
+    else if(compare(out->lexeme, "uint8") || compare(out->lexeme, "u8"))
     {
         out->type = TOKEN_UINT8;
     }
-    else if(compare(out->lexeme, "uint16"))
+    else if(compare(out->lexeme, "uint16") || compare(out->lexeme, "u16"))
     {
         out->type = TOKEN_UINT16;
     }
-    else if(compare(out->lexeme, "uint32") || compare(out->lexeme, "uint"))
+    else if(compare(out->lexeme, "uint32") || compare(out->lexeme, "uint") || compare(out->lexeme, "u32"))
     {
         out->type = TOKEN_UINT32;
     }
-    else if(compare(out->lexeme, "uint64"))
+    else if(compare(out->lexeme, "uint64") || compare(out->lexeme, "u64"))
     {
         out->type = TOKEN_UINT64;
     }
@@ -326,7 +327,7 @@ static inline Token *lex_identifier(char *code, int *i)
     {
         out->type = TOKEN_OBJECT;
     }
-    else if(compare(out->lexeme, "bool"))
+    else if(compare(out->lexeme, "bool") || compare(out->lexeme, "boolean") || compare(out->lexeme, "boole") || compare(out->lexeme, "Boole"))
     {
         out->type = TOKEN_BOOLEAN;
     }
@@ -420,40 +421,12 @@ static inline Token *lex_identifier(char *code, int *i)
     return out;
 }
 
-/* I'd like to make some things clear here and give some explanations.
-    First of all:
-    Notice that in the functions below for scanning operators i is always incremented
-    by strlen(out->lexeme) - 1. If you think about it, the for loop is going to increment i by 1
-    after that. This is why.
-
-    Second of all:
-    The code is not commented. I know, but I do not know what to write in the comments.
-    For example, the only idea for a comment of the plus function below is
-    'An inline function for scanning the plus operators'
-    But you can tell that by just looking at the name.
-    I just don't know how to comment.
-    But I am going to try.
-
-    Finally:
-    Please don't lash out on me for my messy code.
-    I will try my best to make it readable but as I mentioned before,
-    I don't know how to comment.
-*/
-
 // I have decided that I'm a never nester so check this shit out
 
 static inline Token *plus(char *code, int *i)
 {
-    // Allocate the token
     Token *out = malloc(sizeof(Token));
 
-    /*
-     * The following code basically translates to this:
-     * if the next character isn't the end of file and if the next character is equal to '='
-     * then set the type of the token to += and set the lexeme too, increment i and return the token.
-     * else, check if the next character is equal to '+' and if so assign the token type and stuff and return it.
-     * else, else, just means it's a plus so assign the type and other stuffs and return.
-    */
     if(code[*i + 1] != EOF && code[*i + 1] == '=')
     {
         out->type = TOKEN_PLUS_EQUAL;
