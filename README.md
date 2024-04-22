@@ -1,8 +1,9 @@
-# backtick
-Backtick is a general purpose programming language that is currently in development.
+# Stellar C
+Stellar C (formerly backtick-lang) AKA stellar-clang is a general purpose programming language that is currently in development.
 
 The main objective of the project is to develop a stable, multi-paradigm
-language with C-like syntax and performance which does all the manual memory management for you.
+language with C-like syntax and performance which does all the hard things for you.
+Kinda like Rust but also C and stuff.
 
 Roadmap:
 
@@ -24,3 +25,6 @@ Roadmap:
 - [ ] objects, classes
 - [ ] assembly system calls as functions
 - [ ] standard library
+- [ ] perhaps multiline comments?
+- [ ] macros (like C's #define)?
+- [ ] functions

@@ -20,7 +20,7 @@ void free_token(Token *t)
     free(t);
 }
 
-#define FUNNY_PUN
+// #define FUNNY_PUN
 
 // #define DEBUG_PRINT_CHAR_CODES
 #define DEBUG_PRINT_TOKEN_VALUES
@@ -103,7 +103,7 @@ int ends_with(const char *str, const char *suffix)
 
 void check(char **argv, int i)
 {
-	if(ends_with(argv[i], ".backtick"))
+	if(ends_with(argv[i], ".stellarc") || ends_with(argv[i], ".cstellar"))
 	{
 		compile(argv[i]);
 	}
