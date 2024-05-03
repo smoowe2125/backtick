@@ -1,0 +1,10 @@
+// A mutable variable
+int mut a = 5;
+
+a = 6; // OK
+
+println a;
+
+int b = 1;
+
+b = 3; // Error: variable is not declared mutable

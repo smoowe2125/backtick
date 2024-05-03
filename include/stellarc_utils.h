@@ -8,9 +8,9 @@
 
 int had_error = 0;
 
-bool compare(char *str1, char *str2)
-{
-    return strcmp(str1, str2) == 0;
+bool
+compare (char *str1, char *str2) {
+    return strcmp (str1, str2) == 0;
 }
 
 // macro for reporting errors
