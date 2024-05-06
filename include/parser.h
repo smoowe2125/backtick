@@ -33,10 +33,12 @@ ternary (Parser *parser);
 static void
 grouping (Parser *parser);
 
+static void
+subscript (Parser *parser);
+
 typedef enum {
     PREC_NONE,
 
-    PREC_COMMA,
     PREC_ASSIGN,
     PREC_TERNARY,
 
@@ -47,7 +49,10 @@ typedef enum {
     PREC_BITWISE_XOR,
     PREC_BITWISE_AND,
     
-    PREC_COMPARE,
+    PREC_EQ_NEQ,
+    PREC_GT_LT,
+
+    PREC_BITWISE_LS_RS,
 
     PREC_TERM,
     PREC_FACTOR,
@@ -90,6 +95,47 @@ ParseRule rule_table[] = {
 
     [TOKEN_SLASH] = {PREC_FACTOR, NULL, binary, NULL, NULL},
     [TOKEN_SLASH_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+
+    [TOKEN_GREATER] = {PREC_GT_LT, NULL, binary, NULL, NULL},
+    [TOKEN_GREATER_EQUAL] = {PREC_GT_LT, NULL, binary, NULL, NULL},
+    [TOKEN_RIGHT_SHIFT] = {PREC_BITWISE_LS_RS, NULL, binary, NULL, NULL},
+    [TOKEN_RIGHT_SHIFT_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+
+    [TOKEN_LESS] = {PREC_GT_LT, NULL, binary, NULL, NULL},
+    [TOKEN_LESS_EQUAL] = {PREC_GT_LT, NULL, binary, NULL, NULL},
+    [TOKEN_LEFT_SHIFT] = {PREC_BITWISE_LS_RS, NULL, binary, NULL, NULL},
+    [TOKEN_LEFT_SHIFT_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+
+    [TOKEN_NOT] = {PREC_PREFIX, unary, NULL, NULL, NULL},
+    [TOKEN_NOT_EQUAL] = {PREC_EQ_NEQ, NULL, binary, NULL, NULL},
+
+    [TOKEN_BITWISE_NOT] = {PREC_PREFIX, unary, NULL, NULL, NULL},
+    [TOKEN_BITWISE_NOT_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+
+    [TOKEN_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+    [TOKEN_EQUAL_EQUAL] = {PREC_EQ_NEQ, NULL, binary, NULL, NULL},
+
+    [TOKEN_MODULO] = {PREC_FACTOR, NULL, binary, NULL, NULL},
+    [TOKEN_MODULO_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+
+    [TOKEN_XOR] = {PREC_BITWISE_XOR, NULL, binary, NULL, NULL},
+    [TOKEN_XOR_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+
+    [TOKEN_AND] = {PREC_BITWISE_AND, NULL, binary, NULL, NULL},
+    [TOKEN_AND_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+    [TOKEN_LOGIC_AND] = {PREC_LOGICAL_AND, NULL, binary, NULL, NULL},
+
+    [TOKEN_OR] = {PREC_BITWISE_OR, NULL, binary, NULL, NULL},
+    [TOKEN_OR_EQUAL] = {PREC_ASSIGN, NULL, binary, NULL, NULL},
+    [TOKEN_LOGIC_OR] = {PREC_LOGICAL_OR, NULL, binary, NULL, NULL},
+
+    [TOKEN_OPEN_PAREN] = {PREC_PRIMARY, grouping, NULL, NULL, NULL},
+    [TOKEN_CLOSE_PAREN] = {PREC_NONE, NULL, NULL, NULL, NULL, NULL},
+
+    [TOKEN_OPEN_SQUARE] = {PREC_POSTFIX, NULL, NULL, subscript, NULL},
+    [TOKEN_CLOSE_SQUARE] = {PREC_NONE, NULL, NULL, NULL, NULL},
+
+    // statements later
 };
 
 static ParseRule *
@@ -157,4 +203,14 @@ ternary (Parser *parser) {
 static void
 grouping (Parser *parser) {
 
+}
+
+static void
+postfix (Parser *parser) {
+
+}
+
+static void
+subscript (Parser *parser) {
+    
 }
