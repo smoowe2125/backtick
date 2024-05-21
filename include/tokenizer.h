@@ -18,6 +18,7 @@ typedef enum {
     TOKEN_WHILE,
     TOKEN_FOREACH,
     TOKEN_IMPORT,
+    TOKEN_MODULE,
     TOKEN_RETURN,
     TOKEN_THROW,
     TOKEN_CATCH,
@@ -179,7 +180,7 @@ lex_string (char *code, int *i) {
 
     while (code[*i] != '\"') {
         if (code[*i] == EOF) {
-            REPORT_ERROR (SCAN_ERROR, current_line, "Unterminated string.\n");
+            REPORT_ERROR (current_line, "Unterminated string.\n");
             break;
         }
         else if (code[*i] == '\n')
@@ -360,6 +361,9 @@ lex_identifier (char *code, int *i) {
     }
     else if (compare (out->lexeme, "import")) {
         out->type = TOKEN_IMPORT;
+    }
+    else if (compare (out->lexeme, "module")) {
+        out->type = TOKEN_MODULE;
     }
     else if (compare (out->lexeme, "return")) {
         out->type = TOKEN_RETURN;
